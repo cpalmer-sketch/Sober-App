@@ -1,0 +1,6 @@
+{
+  "name": "SoberRewards",
+  "description": "Quit drugs and maintain sobriety with positive dopamine hits, milestone streaks, customizable rewards, urge surfing, and goal-oriented recovery tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,192 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.soberStartDate is string && data.soberStartDate.size() <= 64 &&
+             (!('substanceName' in data) || (data.substanceName is string && data.substanceName.size() <= 100)) &&
+             data.points is int && data.points >= 0 &&
+             (!('currentStreakDays' in data) || (data.currentStreakDays is int && data.currentStreakDays >= 0)) &&
+             (!('longestStreakDays' in data) || (data.longestStreakDays is int && data.longestStreakDays >= 0)) &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidGoal(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             data.period in ['daily', 'weekly', 'monthly'] &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
+             data.targetCount is int && data.targetCount >= 1 && data.targetCount <= 1000 &&
+             data.currentProgress is int && data.currentProgress >= 0 && data.currentProgress <= 1000 &&
+             data.isCompleted is bool &&
+             (!('completedAt' in data) || data.completedAt == null || (data.completedAt is timestamp && data.completedAt <= request.time)) &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidDailyCheckIn(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.date is string && data.date.size() == 10 &&
+             data.status in ['sober', 'struggled'] &&
+             data.cravingLevel is int && data.cravingLevel >= 1 && data.cravingLevel <= 5 &&
+             data.mood is string && data.mood.size() > 0 && data.mood.size() <= 50 &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000)) &&
+             (!('triggers' in data) || (data.triggers is list && data.triggers.size() <= 10)) &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidReward(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+             data.description is string && data.description.size() <= 500 &&
+             (!('iconName' in data) || (data.iconName is string && data.iconName.size() <= 50)) &&
+             data.badgeType is string && data.badgeType.size() <= 50 &&
+             data.pointsAwarded is int && data.pointsAwarded >= 0 && data.pointsAwarded <= 10000 &&
+             data.positiveReinforcement is string && data.positiveReinforcement.size() <= 1000 &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidCustomReward(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+             data.costPoints is int && data.costPoints >= 1 && data.costPoints <= 100000 &&
+             data.isRedeemed is bool &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    match /users/{userId} {
+      allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'soberStartDate', 'points', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'soberStartDate', 'substanceName', 'points', 'currentStreakDays', 'longestStreakDays', 'createdAt', 'updatedAt']) &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['soberStartDate', 'substanceName', 'points', 'currentStreakDays', 'longestStreakDays', 'updatedAt']);
+
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+
+      match /goals/{goalId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == request.auth.uid &&
+                         isValidId(goalId) &&
+                         incoming().keys().hasAll(['userId', 'title', 'period', 'targetCount', 'currentProgress', 'isCompleted', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'period', 'category', 'targetCount', 'currentProgress', 'isCompleted', 'completedAt', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidGoal(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidGoal(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'period', 'category', 'targetCount', 'currentProgress', 'isCompleted', 'completedAt', 'updatedAt']);
+
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      match /check_ins/{checkInId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == request.auth.uid &&
+                         isValidId(checkInId) &&
+                         incoming().keys().hasAll(['userId', 'date', 'status', 'cravingLevel', 'mood', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'date', 'status', 'cravingLevel', 'mood', 'notes', 'triggers', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidDailyCheckIn(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidDailyCheckIn(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'cravingLevel', 'mood', 'notes', 'triggers', 'updatedAt']);
+
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      match /rewards/{rewardId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == request.auth.uid &&
+                         isValidId(rewardId) &&
+                         incoming().keys().hasAll(['userId', 'title', 'description', 'badgeType', 'pointsAwarded', 'positiveReinforcement', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'description', 'iconName', 'badgeType', 'pointsAwarded', 'positiveReinforcement', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidReward(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidReward(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'iconName', 'badgeType', 'pointsAwarded', 'positiveReinforcement', 'updatedAt']);
+
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      match /custom_rewards/{customRewardId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == request.auth.uid &&
+                         isValidId(customRewardId) &&
+                         incoming().keys().hasAll(['userId', 'title', 'costPoints', 'isRedeemed', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'costPoints', 'isRedeemed', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidCustomReward(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidCustomReward(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'costPoints', 'isRedeemed', 'updatedAt']);
+
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+  }
+}

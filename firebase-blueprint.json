@@ -1,0 +1,247 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile tracking sobriety start, dopamine points, and streak stats.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated user identifier"
+        },
+        "soberStartDate": {
+          "type": "string",
+          "description": "Date or ISO string when sobriety journey started"
+        },
+        "substanceName": {
+          "type": "string",
+          "description": "Target substance or general addiction quit focus"
+        },
+        "points": {
+          "type": "integer",
+          "description": "Total dopamine points earned through milestones and goals"
+        },
+        "currentStreakDays": {
+          "type": "integer",
+          "description": "Current consecutive sober days"
+        },
+        "longestStreakDays": {
+          "type": "integer",
+          "description": "Longest consecutive sober days achieved"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp. Clients submit FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp. Clients submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["userId", "soberStartDate", "points", "createdAt"]
+    },
+    "Goal": {
+      "title": "Goal",
+      "description": "Daily, weekly, or monthly recovery goal with visual progress tracking.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner user identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "Goal title"
+        },
+        "period": {
+          "type": "string",
+          "enum": ["daily", "weekly", "monthly"],
+          "description": "Goal time frame"
+        },
+        "category": {
+          "type": "string",
+          "description": "Category such as mindfulness, health, activity, support, custom"
+        },
+        "targetCount": {
+          "type": "integer",
+          "description": "Target number of completions or repetitions"
+        },
+        "currentProgress": {
+          "type": "integer",
+          "description": "Current completed repetitions toward target"
+        },
+        "isCompleted": {
+          "type": "boolean",
+          "description": "Whether the goal is marked complete"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Optional completion timestamp"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp. Clients submit FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp. Clients submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["userId", "title", "period", "targetCount", "currentProgress", "isCompleted", "createdAt"]
+    },
+    "DailyCheckIn": {
+      "title": "DailyCheckIn",
+      "description": "Daily sobriety status log with cravings, mood, triggers, and reflection notes.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner user identifier"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date formatted as YYYY-MM-DD"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["sober", "struggled"],
+          "description": "Sobriety status for the day"
+        },
+        "cravingLevel": {
+          "type": "integer",
+          "description": "Craving intensity scale from 1 to 5"
+        },
+        "mood": {
+          "type": "string",
+          "description": "Mood status e.g. great, good, neutral, tough, hard"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional reflection notes or gratitude"
+        },
+        "triggers": {
+          "type": "array",
+          "description": "Optional list of encountered triggers e.g. stress, social, boredom"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp. Clients submit FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp. Clients submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["userId", "date", "status", "cravingLevel", "mood", "createdAt"]
+    },
+    "Reward": {
+      "title": "Reward",
+      "description": "Awarded virtual badge or milestone achievement with dopamine hits and positive reinforcement.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner user identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "Badge title e.g. 24 Hours Clean, 1 Week Milestone"
+        },
+        "description": {
+          "type": "string",
+          "description": "Badge description"
+        },
+        "iconName": {
+          "type": "string",
+          "description": "Icon identifier for display"
+        },
+        "badgeType": {
+          "type": "string",
+          "description": "Badge category e.g. milestone, streak, goal_master, check_in"
+        },
+        "pointsAwarded": {
+          "type": "integer",
+          "description": "Dopamine points awarded"
+        },
+        "positiveReinforcement": {
+          "type": "string",
+          "description": "Encouraging neurobiology/mindset dopamine message"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp. Clients submit FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp. Clients submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["userId", "title", "description", "badgeType", "pointsAwarded", "positiveReinforcement", "createdAt"]
+    },
+    "CustomReward": {
+      "title": "CustomReward",
+      "description": "Real-life healthy dopamine rewards user sets for themselves and redeems with points.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner user identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "Reward item e.g. Specialty coffee, Movie night, New book"
+        },
+        "costPoints": {
+          "type": "integer",
+          "description": "Points needed to unlock/redeem"
+        },
+        "isRedeemed": {
+          "type": "boolean",
+          "description": "Whether reward has been redeemed"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp. Clients submit FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp. Clients submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["userId", "title", "costPoints", "isRedeemed", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User recovery profile and overall statistics"
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": "Goal",
+      "description": "User daily, weekly, and monthly goals"
+    },
+    "/users/{userId}/check_ins/{checkInId}": {
+      "schema": "DailyCheckIn",
+      "description": "Daily sobriety logs, mood, and reflection notes"
+    },
+    "/users/{userId}/rewards/{rewardId}": {
+      "schema": "Reward",
+      "description": "Unlocked milestone badges and positive reinforcement rewards"
+    },
+    "/users/{userId}/custom_rewards/{customRewardId}": {
+      "schema": "CustomReward",
+      "description": "Custom healthy treats redeemable with dopamine points"
+    }
+  }
+}
